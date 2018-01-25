@@ -13,6 +13,14 @@ public abstract class Manifest
 
   }
 
+  public static Manifest create(
+    final URI file,
+    final String hash,
+    final ImmutableList<Delta> deltas)
+  {
+    return new AutoValue_Manifest(file, hash, deltas);
+  }
+
   /**
    * @return The initial file URI
    */
@@ -31,17 +39,17 @@ public abstract class Manifest
 
   public abstract ImmutableList<Delta> deltas();
 
-  public static Manifest create(
-    final URI file,
-    final String hash,
-    final ImmutableList<Delta> deltas)
-  {
-    return new AutoValue_Manifest(file, hash, deltas);
-  }
-
   @AutoValue
   public static abstract class Delta
   {
+    public static Delta create(
+      final URI file,
+      final String delta_hash,
+      final String result_hash)
+    {
+      return new AutoValue_Manifest_Delta(file, delta_hash, result_hash);
+    }
+
     /**
      * @return The delta file
      */
@@ -59,13 +67,5 @@ public abstract class Manifest
      */
 
     public abstract String resultHash();
-
-    public static Delta create(
-      final URI file,
-      final String delta_hash,
-      final String result_hash)
-    {
-      return new AutoValue_Manifest_Delta(file, delta_hash, result_hash);
-    }
   }
 }

@@ -261,7 +261,9 @@ public final class ManifestXML
       }
 
       return Manifest.create(
-        this.manifest_uri, this.manifest_hash, ImmutableList.copyOf(this.deltas));
+        this.manifest_uri,
+        this.manifest_hash,
+        ImmutableList.copyOf(this.deltas));
     }
   }
 }

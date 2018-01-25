@@ -12,6 +12,8 @@ import com.io7m.jxdeltapoc.PatcherEvent.PatcherEventUpdateStarted;
 import net.dongliu.vcdiff.VcdiffDecoder;
 import net.dongliu.vcdiff.exception.VcdiffDecodeException;
 import net.dongliu.vcdiff.io.FileStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,16 +22,60 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.List;
 
 public final class Patcher
 {
+  private static final Logger LOG = LoggerFactory.getLogger(Patcher.class);
+
   private Patcher()
   {
 
+  }
+
+  public static PatcherRemoteContent remoteContentForURI(
+    final URI url)
+    throws IOException
+  {
+    LOG.debug("open: {}", url);
+
+    final HttpURLConnection connection =
+      (HttpURLConnection) url.toURL().openConnection();
+
+    final int code = connection.getResponseCode();
+    if (code >= 200 && code < 400) {
+      return PatcherRemoteContent.create(
+        url, connection.getContentLengthLong(), connection.getInputStream());
+    }
+    throw new IOException("HTTP error: " + code);
+  }
+
+  public static File updateFromRemote(
+    final URI manifest_uri,
+    final File input,
+    final File directory,
+    final PatcherURIStreamProviderType streams,
+    final PatcherEventConsumerType events)
+    throws PatcherException
+  {
+    events.onEvent(PatcherEventUpdateStarted.create());
+
+    LOG.debug("fetching manifest: {}", manifest_uri);
+
+    final PatcherHardenedSAXParsers parsers = PatcherHardenedSAXParsers.create();
+    try (InputStream stream = manifest_uri.toURL().openStream()) {
+      final Manifest manifest = ManifestXML.parse(parsers, stream);
+      return update(manifest, input, directory, streams, events);
+    } catch (final IOException e) {
+      throw new PatcherIOException(e);
+    } finally {
+      events.onEvent(PatcherEventUpdateFinished.create());
+    }
   }
 
   public static File updateFromManifest(
@@ -41,23 +87,42 @@ public final class Patcher
     throws PatcherException
   {
     events.onEvent(PatcherEventUpdateStarted.create());
-
     try {
-      final RequiredOperations required;
-      if (input.isFile()) {
-        final String hash = sha256Of(input);
-        required = calculateRequirements(Optional.of(hash), manifest);
-      } else {
-        required = calculateRequirements(Optional.absent(), manifest);
-      }
-
-      return runUpdate(manifest, input, directory, streams, events, required);
+      return update(manifest, input, directory, streams, events);
     } finally {
       events.onEvent(PatcherEventUpdateFinished.create());
     }
   }
 
-  private static File runUpdate(
+  private static File update(
+    final Manifest manifest,
+    final File input,
+    final File directory,
+    final PatcherURIStreamProviderType streams,
+    final PatcherEventConsumerType events)
+    throws PatcherException
+  {
+    final RequiredOperations required;
+    if (input.isFile()) {
+      final String hash = sha256Of(input);
+      required = calculateRequirements(Optional.of(hash), manifest);
+    } else {
+      required = calculateRequirements(Optional.absent(), manifest);
+    }
+
+    LOG.debug("initial file download required: {}",
+              Boolean.valueOf(required.require_initial));
+    LOG.debug("require {} deltas, starting at {}",
+              Integer.valueOf(required.required_deltas.size()),
+              !required.required_deltas.isEmpty()
+                ? required.required_deltas.get(0).resultHash()
+                : "(none)");
+
+    return runDownloadsAndPatches(
+      manifest, input, directory, streams, events, required);
+  }
+
+  private static File runDownloadsAndPatches(
     final Manifest manifest,
     final File input,
     final File directory,
@@ -94,6 +159,16 @@ public final class Patcher
       ++downloads;
     }
 
+    return applyPatches(input, directory, required, patches);
+  }
+
+  private static File applyPatches(
+    final File input,
+    final File directory,
+    final RequiredOperations required,
+    final List<File> patches)
+    throws PatcherIOException
+  {
     assert patches.size() == required.required_deltas.size();
 
     File source = input;
@@ -215,6 +290,8 @@ public final class Patcher
     final Optional<String> hash_opt,
     final Manifest manifest)
   {
+    LOG.debug("calculating requirements");
+
     /*
      * The initial file does not exist. The initial file must be fetched along
      * with all deltas.
@@ -258,6 +335,35 @@ public final class Patcher
     return new RequiredOperations(true, manifest.deltas());
   }
 
+  private static String sha256Of(final File file)
+    throws PatcherIOException
+  {
+    try {
+      final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      try (FileInputStream stream = new FileInputStream(file)) {
+        final byte[] buffer = new byte[1024];
+        while (true) {
+          final int r = stream.read(buffer);
+          if (r < 0) {
+            break;
+          }
+          digest.update(buffer, 0, r);
+        }
+        final byte[] result = digest.digest();
+        final String text = BaseEncoding.base16()
+          .lowerCase()
+          .encode(result);
+
+        LOG.debug("hash: {} -> {}", file, text);
+        return text;
+      } catch (final IOException e) {
+        throw new PatcherIOException(e);
+      }
+    } catch (final NoSuchAlgorithmException e) {
+      throw new PatcherIOException(new IOException(e));
+    }
+  }
+
   private static final class RequiredOperations
   {
     private final boolean require_initial;
@@ -274,32 +380,6 @@ public final class Patcher
     int requiredDownloads()
     {
       return this.required_deltas.size() + (this.require_initial ? 1 : 0);
-    }
-  }
-
-  private static String sha256Of(final File start)
-    throws PatcherIOException
-  {
-    try {
-      final MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      try (FileInputStream stream = new FileInputStream(start)) {
-        final byte[] buffer = new byte[1024];
-        while (true) {
-          final int r = stream.read(buffer);
-          if (r < 0) {
-            break;
-          }
-          digest.update(buffer, 0, r);
-        }
-        final byte[] result = digest.digest();
-        return BaseEncoding.base16()
-          .lowerCase()
-          .encode(result);
-      } catch (final IOException e) {
-        throw new PatcherIOException(e);
-      }
-    } catch (final NoSuchAlgorithmException e) {
-      throw new PatcherIOException(new IOException(e));
     }
   }
 }

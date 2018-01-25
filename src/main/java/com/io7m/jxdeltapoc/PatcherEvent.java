@@ -75,7 +75,8 @@ public abstract class PatcherEvent
   }
 
   @AutoValue
-  public abstract static class PatcherEventDownloadStarted extends PatcherEventDownload
+  public abstract static class PatcherEventDownloadStarted extends
+    PatcherEventDownload
   {
     public static PatcherEventDownloadStarted create(
       final URI uri,
@@ -93,7 +94,8 @@ public abstract class PatcherEvent
   }
 
   @AutoValue
-  public abstract static class PatcherEventDownloadFailed extends PatcherEventDownload
+  public abstract static class PatcherEventDownloadFailed extends
+    PatcherEventDownload
   {
     public static PatcherEventDownloadFailed create(
       final URI uri,
@@ -114,7 +116,8 @@ public abstract class PatcherEvent
   }
 
   @AutoValue
-  public abstract static class PatcherEventDownloadProgress extends PatcherEventDownload
+  public abstract static class PatcherEventDownloadProgress extends
+    PatcherEventDownload
   {
     public static PatcherEventDownloadProgress create(
       final URI uri,
@@ -148,7 +151,8 @@ public abstract class PatcherEvent
   }
 
   @AutoValue
-  public abstract static class PatcherEventDownloadFinished extends PatcherEventDownload
+  public abstract static class PatcherEventDownloadFinished extends
+    PatcherEventDownload
   {
     public static PatcherEventDownloadFinished create(
       final URI uri,
