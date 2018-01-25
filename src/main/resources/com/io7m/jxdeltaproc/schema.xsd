@@ -34,6 +34,15 @@
       <attribute name="file" type="anyURI" use="required"/>
       <attribute name="hash" type="s:hashType" use="required"/>
     </complexType>
+
+    <key name="resultHashMustBeUnique">
+      <selector xpath="s:deltas/s:delta"/>
+      <field xpath="@resultHash"/>
+    </key>
+    <key name="deltaFileMustBeUnique">
+      <selector xpath="s:deltas/s:delta"/>
+      <field xpath="@file"/>
+    </key>
   </element>
 
 </schema>
