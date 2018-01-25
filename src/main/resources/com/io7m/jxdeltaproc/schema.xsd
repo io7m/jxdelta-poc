@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<schema
+  targetNamespace="urn:com.io7m.jxdeltaproc:xml:1.0"
+  xmlns:s="urn:com.io7m.jxdeltaproc:xml:1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema">
+
+  <simpleType name="hashType">
+    <restriction base="string">
+      <pattern value="[a-f0-9]+"/>
+    </restriction>
+  </simpleType>
+
+  <element name="delta">
+    <complexType>
+      <attribute name="file" type="anyURI" use="required"/>
+      <attribute name="deltaHash" type="s:hashType" use="required"/>
+      <attribute name="resultHash" type="s:hashType" use="required"/>
+    </complexType>
+  </element>
+
+  <element name="deltas">
+    <complexType>
+      <sequence>
+        <element ref="s:delta" minOccurs="0" maxOccurs="unbounded"/>
+      </sequence>
+    </complexType>
+  </element>
+
+  <element name="manifest">
+    <complexType>
+      <sequence minOccurs="1" maxOccurs="1">
+        <element ref="s:deltas"/>
+      </sequence>
+      <attribute name="file" type="anyURI" use="required"/>
+      <attribute name="hash" type="s:hashType" use="required"/>
+    </complexType>
+  </element>
+
+</schema>
