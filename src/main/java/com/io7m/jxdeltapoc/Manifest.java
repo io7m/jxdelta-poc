@@ -58,14 +58,14 @@ public abstract class Manifest
      * @return The final hash of the file if all the deltas up to and including this point are applied
      */
 
-    public abstract String postHash();
+    public abstract String resultHash();
 
     public static Delta create(
       final URI file,
       final String delta_hash,
-      final String post_hash)
+      final String result_hash)
     {
-      return new AutoValue_Manifest_Delta(file, delta_hash, post_hash);
+      return new AutoValue_Manifest_Delta(file, delta_hash, result_hash);
     }
   }
 }

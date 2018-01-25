@@ -47,8 +47,8 @@ popd
 
 sha256sum -c ../zip-sums.txt
 
-xdelta3 -e -s 0.zip 1.zip 1.patch
-xdelta3 -e -s 1.zip 2.zip 2.patch
+xdelta3 -e -S -s 0.zip 1.zip 1.patch
+xdelta3 -e -S -s 1.zip 2.zip 2.patch
 
 sha256sum -c ../zip-patch-sums.txt
 

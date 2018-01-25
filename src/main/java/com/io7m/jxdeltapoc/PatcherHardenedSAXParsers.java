@@ -24,16 +24,21 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-final class HardenedSAXParsers
+public final class PatcherHardenedSAXParsers
 {
   private final SAXParserFactory parsers;
 
-  HardenedSAXParsers()
+  private PatcherHardenedSAXParsers()
   {
     this.parsers = SAXParserFactory.newInstance();
   }
 
-  XMLReader createXMLReaderNonValidating(
+  public static PatcherHardenedSAXParsers create()
+  {
+    return new PatcherHardenedSAXParsers();
+  }
+
+  public XMLReader createXMLReaderNonValidating(
     final boolean xinclude)
     throws ParserConfigurationException, SAXException
   {

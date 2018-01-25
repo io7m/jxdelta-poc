@@ -1,0 +1,15 @@
+<manifest
+  xmlns="urn:com.io7m.jxdeltaproc:xml:1.0"
+  file="http://example.com/0.zip"
+  hash="b1a3f90386fdd3dd181657c5c087d6e4f1bc3ce0aefddb06f4b580ec0b86372e">
+  <deltas>
+    <delta
+      file="http://example.com/1.patch"
+      deltaHash="a773179bbe49838db5945f992770d931306c96e274fdb026cb16b40c63ba5864"
+      resultHash="f1159775fe05f0bd040569af09eebab19a9a9d3ced287c390553724fbe26bc26"/>
+    <delta
+      file="http://example.com/2.patch"
+      deltaHash="803caa485910ad18def0277f347452b9834c4e62115950abc5dd5c0d3326fc49"
+      resultHash="659b37fd6c4da14c98c95a94805a4b2ef08b86a0d65eda5b799d3ed402bf1182"/>
+  </deltas>
+</manifest>

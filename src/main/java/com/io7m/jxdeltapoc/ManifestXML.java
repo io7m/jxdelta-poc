@@ -25,7 +25,7 @@ public final class ManifestXML
   }
 
   public static Manifest parse(
-    final HardenedSAXParsers parsers,
+    final PatcherHardenedSAXParsers parsers,
     final InputStream stream)
     throws IOException
   {
@@ -47,6 +47,11 @@ public final class ManifestXML
     private String manifest_hash;
     private ArrayList<Manifest.Delta> deltas;
     private boolean failed;
+
+    ManifestContentHandler()
+    {
+      this.deltas = new ArrayList<>(32);
+    }
 
     @Override
     public void setDocumentLocator(final Locator locator)
@@ -93,6 +98,9 @@ public final class ManifestXML
         switch (localName) {
           case "manifest": {
             this.parseManifest(localName, atts);
+            break;
+          }
+          case "deltas": {
             break;
           }
           case "delta": {
@@ -174,6 +182,9 @@ public final class ManifestXML
     {
       switch (localName) {
         case "manifest": {
+          break;
+        }
+        case "deltas": {
           break;
         }
         case "delta": {
