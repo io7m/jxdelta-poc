@@ -14,6 +14,7 @@ public final class Demo
 
   private Demo()
   {
+
   }
 
   public static void main(final String[] args)

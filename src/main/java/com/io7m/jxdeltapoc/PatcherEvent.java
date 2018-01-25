@@ -230,7 +230,8 @@ public abstract class PatcherEvent
   }
 
   @AutoValue
-  public abstract static class PatcherEventDeltaProgress extends PatcherEventDelta
+  public abstract static class PatcherEventDeltaProgress extends
+    PatcherEventDelta
   {
     public static PatcherEventDeltaProgress create(
       final int index,
@@ -247,7 +248,8 @@ public abstract class PatcherEvent
   }
 
   @AutoValue
-  public abstract static class PatcherEventDeltaSucceeded extends PatcherEventDelta
+  public abstract static class PatcherEventDeltaSucceeded extends
+    PatcherEventDelta
   {
     public static PatcherEventDeltaSucceeded create(
       final int index,

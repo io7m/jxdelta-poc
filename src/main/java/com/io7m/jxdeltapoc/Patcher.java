@@ -116,13 +116,15 @@ public final class Patcher
       required = calculateRequirements(Optional.absent(), manifest);
     }
 
-    LOG.debug("initial file download required: {}",
-              Boolean.valueOf(required.require_initial));
-    LOG.debug("require {} deltas, starting at {}",
-              Integer.valueOf(required.required_deltas.size()),
-              !required.required_deltas.isEmpty()
-                ? required.required_deltas.get(0).resultHash()
-                : "(none)");
+    LOG.debug(
+      "initial file download required: {}",
+      Boolean.valueOf(required.require_initial));
+    LOG.debug(
+      "require {} deltas, starting at {}",
+      Integer.valueOf(required.required_deltas.size()),
+      !required.required_deltas.isEmpty()
+        ? required.required_deltas.get(0).resultHash()
+        : "(none)");
 
     return runDownloadsAndPatches(
       manifest, input, directory, streams, events, required);
@@ -239,7 +241,10 @@ public final class Patcher
     try {
       final File file = download(streams, events, uri, index, count, output);
       checkHash(file, hash);
-      events.onEvent(PatcherEvent.PatcherEventDownloadSucceeded.create(uri, index, count));
+      events.onEvent(PatcherEvent.PatcherEventDownloadSucceeded.create(
+        uri,
+        index,
+        count));
       return file;
     } catch (final PatcherException e) {
       events.onEvent(PatcherEventDownloadFailed.create(uri, index, count, e));
@@ -395,19 +400,3 @@ public final class Patcher
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
