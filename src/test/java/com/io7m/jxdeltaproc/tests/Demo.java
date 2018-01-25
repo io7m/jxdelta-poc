@@ -24,8 +24,31 @@ public final class Demo
     final File file =
       new File("/tmp/jxdelta-poc/file.zip");
 
+    LOG.debug("performing initial update (waiting two seconds)...");
+    Thread.sleep(2000L);
+
     Patcher.updateFromRemote(
-      URI.create("http://ataxia.io7m.com/jxdelta-poc/simple/manifest.xml"),
+      URI.create("http://ataxia.io7m.com/jxdelta-poc/simple-0/manifest.xml"),
+      file,
+      directory,
+      Patcher::remoteContentForURI,
+      Demo::onEvent);
+
+    LOG.debug("performing downgrade (waiting two seconds)...");
+    Thread.sleep(2000L);
+
+    Patcher.updateFromRemote(
+      URI.create("http://ataxia.io7m.com/jxdelta-poc/simple-1/manifest.xml"),
+      file,
+      directory,
+      Patcher::remoteContentForURI,
+      Demo::onEvent);
+
+    LOG.debug("performing upgrade (waiting two seconds)...");
+    Thread.sleep(2000L);
+
+    Patcher.updateFromRemote(
+      URI.create("http://ataxia.io7m.com/jxdelta-poc/simple-0/manifest.xml"),
       file,
       directory,
       Patcher::remoteContentForURI,
