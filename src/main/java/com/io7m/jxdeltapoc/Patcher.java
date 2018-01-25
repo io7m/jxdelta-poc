@@ -3,11 +3,13 @@ package com.io7m.jxdeltapoc;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.BaseEncoding;
+import com.io7m.jxdeltapoc.PatcherEvent.PatcherEventDeltaFailed;
+import com.io7m.jxdeltapoc.PatcherEvent.PatcherEventDeltaProgress;
+import com.io7m.jxdeltapoc.PatcherEvent.PatcherEventDeltaSucceeded;
 import com.io7m.jxdeltapoc.PatcherEvent.PatcherEventDownloadFailed;
-import com.io7m.jxdeltapoc.PatcherEvent.PatcherEventDownloadFinished;
 import com.io7m.jxdeltapoc.PatcherEvent.PatcherEventDownloadProgress;
 import com.io7m.jxdeltapoc.PatcherEvent.PatcherEventDownloadStarted;
-import com.io7m.jxdeltapoc.PatcherEvent.PatcherEventUpdateFinished;
+import com.io7m.jxdeltapoc.PatcherEvent.PatcherEventUpdateFailed;
 import com.io7m.jxdeltapoc.PatcherEvent.PatcherEventUpdateStarted;
 import net.dongliu.vcdiff.VcdiffDecoder;
 import net.dongliu.vcdiff.exception.VcdiffDecodeException;
@@ -70,11 +72,12 @@ public final class Patcher
     final PatcherHardenedSAXParsers parsers = PatcherHardenedSAXParsers.create();
     try (InputStream stream = manifest_uri.toURL().openStream()) {
       final Manifest manifest = ManifestXML.parse(parsers, stream);
-      return update(manifest, input, directory, streams, events);
+      final File file = update(manifest, input, directory, streams, events);
+      events.onEvent(PatcherEvent.PatcherEventUpdateSucceeded.create());
+      return file;
     } catch (final IOException e) {
+      events.onEvent(PatcherEventUpdateFailed.create(e));
       throw new PatcherIOException(e);
-    } finally {
-      events.onEvent(PatcherEventUpdateFinished.create());
     }
   }
 
@@ -88,9 +91,12 @@ public final class Patcher
   {
     events.onEvent(PatcherEventUpdateStarted.create());
     try {
-      return update(manifest, input, directory, streams, events);
-    } finally {
-      events.onEvent(PatcherEventUpdateFinished.create());
+      final File file = update(manifest, input, directory, streams, events);
+      events.onEvent(PatcherEvent.PatcherEventUpdateSucceeded.create());
+      return file;
+    } catch (final Exception e) {
+      events.onEvent(PatcherEventUpdateFailed.create(e));
+      throw e;
     }
   }
 
@@ -159,32 +165,38 @@ public final class Patcher
       ++downloads;
     }
 
-    return applyPatches(input, directory, required, patches);
+    return applyPatches(input, directory, events, required, patches);
   }
 
   private static File applyPatches(
     final File input,
     final File directory,
+    final PatcherEventConsumerType events,
     final RequiredOperations required,
     final List<File> patches)
     throws PatcherIOException
   {
-    assert patches.size() == required.required_deltas.size();
+    final int count = patches.size();
+    assert count == required.required_deltas.size();
 
     File source = input;
-    for (int index = 0; index < patches.size(); ++index) {
+    for (int index = 0; index < count; ++index) {
+      events.onEvent(PatcherEventDeltaProgress.create(index, count));
+
       final File patch = patches.get(index);
       final Manifest.Delta delta = required.required_deltas.get(index);
       final File out = new File(directory, index + ".data");
 
       try {
         applyPatch(delta, source, patch, out);
+        events.onEvent(PatcherEventDeltaSucceeded.create(index, count));
         source = out;
       } catch (final Exception e) {
+        events.onEvent(PatcherEventDeltaFailed.create(index, count, e));
         throw new PatcherIOException(e);
       }
 
-      if (index + 1 == patches.size()) {
+      if (index + 1 == count) {
         out.renameTo(input);
       }
     }
@@ -227,7 +239,7 @@ public final class Patcher
     try {
       final File file = download(streams, events, uri, index, count, output);
       checkHash(file, hash);
-      events.onEvent(PatcherEventDownloadFinished.create(uri, index, count));
+      events.onEvent(PatcherEvent.PatcherEventDownloadSucceeded.create(uri, index, count));
       return file;
     } catch (final PatcherException e) {
       events.onEvent(PatcherEventDownloadFailed.create(uri, index, count, e));

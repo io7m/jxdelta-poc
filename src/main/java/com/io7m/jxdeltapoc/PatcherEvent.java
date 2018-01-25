@@ -4,12 +4,16 @@ import com.google.auto.value.AutoValue;
 
 import java.net.URI;
 
+import static com.io7m.jxdeltapoc.PatcherEvent.Kind.PATCHER_DELTA_FAILED;
+import static com.io7m.jxdeltapoc.PatcherEvent.Kind.PATCHER_DELTA_PROGRESS;
+import static com.io7m.jxdeltapoc.PatcherEvent.Kind.PATCHER_DELTA_SUCCEEDED;
 import static com.io7m.jxdeltapoc.PatcherEvent.Kind.PATCHER_DOWNLOAD_FAILED;
-import static com.io7m.jxdeltapoc.PatcherEvent.Kind.PATCHER_DOWNLOAD_FINISHED;
 import static com.io7m.jxdeltapoc.PatcherEvent.Kind.PATCHER_DOWNLOAD_PROGRESS;
 import static com.io7m.jxdeltapoc.PatcherEvent.Kind.PATCHER_DOWNLOAD_STARTED;
-import static com.io7m.jxdeltapoc.PatcherEvent.Kind.PATCHER_UPDATE_FINISHED;
+import static com.io7m.jxdeltapoc.PatcherEvent.Kind.PATCHER_DOWNLOAD_SUCCEEDED;
+import static com.io7m.jxdeltapoc.PatcherEvent.Kind.PATCHER_UPDATE_FAILED;
 import static com.io7m.jxdeltapoc.PatcherEvent.Kind.PATCHER_UPDATE_STARTED;
+import static com.io7m.jxdeltapoc.PatcherEvent.Kind.PATCHER_UPDATE_SUCCEEDED;
 
 public abstract class PatcherEvent
 {
@@ -21,8 +25,12 @@ public abstract class PatcherEvent
     PATCHER_DOWNLOAD_STARTED,
     PATCHER_DOWNLOAD_PROGRESS,
     PATCHER_DOWNLOAD_FAILED,
-    PATCHER_DOWNLOAD_FINISHED,
-    PATCHER_UPDATE_FINISHED
+    PATCHER_DOWNLOAD_SUCCEEDED,
+    PATCHER_DELTA_PROGRESS,
+    PATCHER_DELTA_FAILED,
+    PATCHER_DELTA_SUCCEEDED,
+    PATCHER_UPDATE_FAILED,
+    PATCHER_UPDATE_SUCCEEDED
   }
 
   @AutoValue
@@ -33,24 +41,40 @@ public abstract class PatcherEvent
       return new AutoValue_PatcherEvent_PatcherEventUpdateStarted();
     }
 
-    public Kind kind()
+    public final Kind kind()
     {
       return PATCHER_UPDATE_STARTED;
     }
   }
 
   @AutoValue
-  public abstract static class PatcherEventUpdateFinished extends PatcherEvent
+  public abstract static class PatcherEventUpdateSucceeded extends PatcherEvent
   {
-    public static PatcherEventUpdateFinished create()
+    public static PatcherEventUpdateSucceeded create()
     {
-      return new AutoValue_PatcherEvent_PatcherEventUpdateFinished();
+      return new AutoValue_PatcherEvent_PatcherEventUpdateSucceeded();
     }
 
-    public Kind kind()
+    public final Kind kind()
     {
-      return PATCHER_UPDATE_FINISHED;
+      return PATCHER_UPDATE_SUCCEEDED;
     }
+  }
+
+  @AutoValue
+  public abstract static class PatcherEventUpdateFailed extends PatcherEvent
+  {
+    public static PatcherEventUpdateFailed create(final Exception error)
+    {
+      return new AutoValue_PatcherEvent_PatcherEventUpdateFailed(error);
+    }
+
+    public final Kind kind()
+    {
+      return PATCHER_UPDATE_FAILED;
+    }
+
+    public abstract Exception error();
   }
 
   public abstract static class PatcherEventDownload extends PatcherEvent
@@ -151,21 +175,91 @@ public abstract class PatcherEvent
   }
 
   @AutoValue
-  public abstract static class PatcherEventDownloadFinished extends
+  public abstract static class PatcherEventDownloadSucceeded extends
     PatcherEventDownload
   {
-    public static PatcherEventDownloadFinished create(
+    public static PatcherEventDownloadSucceeded create(
       final URI uri,
       final int index,
       final int count)
     {
-      return new AutoValue_PatcherEvent_PatcherEventDownloadFinished(
+      return new AutoValue_PatcherEvent_PatcherEventDownloadSucceeded(
         uri, index, count);
     }
 
     public final Kind kind()
     {
-      return PATCHER_DOWNLOAD_FINISHED;
+      return PATCHER_DOWNLOAD_SUCCEEDED;
+    }
+  }
+
+  public abstract static class PatcherEventDelta extends PatcherEvent
+  {
+    /**
+     * @return The index of the current patch
+     */
+
+    public abstract int index();
+
+    /**
+     * @return The total number of patches that will be applied
+     */
+
+    public abstract int count();
+  }
+
+
+  @AutoValue
+  public abstract static class PatcherEventDeltaFailed extends PatcherEventDelta
+  {
+    public static PatcherEventDeltaFailed create(
+      final int index,
+      final int count,
+      final Exception error)
+    {
+      return new AutoValue_PatcherEvent_PatcherEventDeltaFailed(
+        index, count, error);
+    }
+
+    public final Kind kind()
+    {
+      return PATCHER_DELTA_FAILED;
+    }
+
+    public abstract Exception error();
+  }
+
+  @AutoValue
+  public abstract static class PatcherEventDeltaProgress extends PatcherEventDelta
+  {
+    public static PatcherEventDeltaProgress create(
+      final int index,
+      final int count)
+    {
+      return new AutoValue_PatcherEvent_PatcherEventDeltaProgress(
+        index, count);
+    }
+
+    public final Kind kind()
+    {
+      return PATCHER_DELTA_PROGRESS;
+    }
+  }
+
+  @AutoValue
+  public abstract static class PatcherEventDeltaSucceeded extends PatcherEventDelta
+  {
+    public static PatcherEventDeltaSucceeded create(
+      final int index,
+      final int count)
+    {
+      return new AutoValue_PatcherEvent_PatcherEventDeltaSucceeded(
+        index, count);
+    }
+
+    public final Kind kind()
+    {
+      return PATCHER_DELTA_SUCCEEDED;
     }
   }
 }
