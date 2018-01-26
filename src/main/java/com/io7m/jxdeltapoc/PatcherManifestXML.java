@@ -17,14 +17,14 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Map;
 
-public final class ManifestXML
+public final class PatcherManifestXML
 {
-  private ManifestXML()
+  private PatcherManifestXML()
   {
 
   }
 
-  public static Manifest parse(
+  public static PatcherManifest parse(
     final PatcherHardenedSAXParsers parsers,
     final InputStream stream)
     throws IOException
@@ -45,7 +45,7 @@ public final class ManifestXML
     private Locator locator;
     private URI manifest_uri;
     private String manifest_hash;
-    private ArrayList<Manifest.Delta> deltas;
+    private ArrayList<PatcherManifest.Delta> deltas;
     private boolean failed;
 
     ManifestContentHandler()
@@ -118,7 +118,7 @@ public final class ManifestXML
       }
     }
 
-    private Manifest.Delta parseDelta(
+    private PatcherManifest.Delta parseDelta(
       final String localName,
       final Attributes atts)
       throws URISyntaxException, SAXParseException
@@ -148,7 +148,7 @@ public final class ManifestXML
           "Missing resultHash attribute: " + localName, this.locator);
       }
 
-      return Manifest.Delta.create(uri, delta_hash, result_hash);
+      return PatcherManifest.Delta.create(uri, delta_hash, result_hash);
     }
 
     private void parseManifest(
@@ -253,14 +253,14 @@ public final class ManifestXML
 
     }
 
-    public Manifest manifest()
+    public PatcherManifest manifest()
       throws IOException
     {
       if (this.failed) {
         throw new IOException("Parsing has failed");
       }
 
-      return Manifest.create(
+      return PatcherManifest.create(
         this.manifest_uri,
         this.manifest_hash,
         ImmutableList.copyOf(this.deltas));

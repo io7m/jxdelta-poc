@@ -6,19 +6,19 @@ import com.google.common.collect.ImmutableList;
 import java.net.URI;
 
 @AutoValue
-public abstract class Manifest
+public abstract class PatcherManifest
 {
-  Manifest()
+  PatcherManifest()
   {
 
   }
 
-  public static Manifest create(
+  public static PatcherManifest create(
     final URI file,
     final String hash,
     final ImmutableList<Delta> deltas)
   {
-    return new AutoValue_Manifest(file, hash, deltas);
+    return new AutoValue_PatcherManifest(file, hash, deltas);
   }
 
   /**
@@ -47,7 +47,7 @@ public abstract class Manifest
       final String delta_hash,
       final String result_hash)
     {
-      return new AutoValue_Manifest_Delta(file, delta_hash, result_hash);
+      return new AutoValue_PatcherManifest_Delta(file, delta_hash, result_hash);
     }
 
     /**

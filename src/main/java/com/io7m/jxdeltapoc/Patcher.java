@@ -71,7 +71,7 @@ public final class Patcher
 
     final PatcherHardenedSAXParsers parsers = PatcherHardenedSAXParsers.create();
     try (InputStream stream = manifest_uri.toURL().openStream()) {
-      final Manifest manifest = ManifestXML.parse(parsers, stream);
+      final PatcherManifest manifest = PatcherManifestXML.parse(parsers, stream);
       final File file = update(manifest, input, directory, streams, events);
       events.onEvent(PatcherEvent.PatcherEventUpdateSucceeded.create());
       return file;
@@ -82,7 +82,7 @@ public final class Patcher
   }
 
   public static File updateFromManifest(
-    final Manifest manifest,
+    final PatcherManifest manifest,
     final File input,
     final File directory,
     final PatcherURIStreamProviderType streams,
@@ -101,7 +101,7 @@ public final class Patcher
   }
 
   private static File update(
-    final Manifest manifest,
+    final PatcherManifest manifest,
     final File input,
     final File directory,
     final PatcherURIStreamProviderType streams,
@@ -131,7 +131,7 @@ public final class Patcher
   }
 
   private static File runDownloadsAndPatches(
-    final Manifest manifest,
+    final PatcherManifest manifest,
     final File input,
     final File directory,
     final PatcherURIStreamProviderType streams,
@@ -155,7 +155,7 @@ public final class Patcher
     final ArrayList<File> patches =
       new ArrayList<>(required.required_deltas.size());
 
-    for (final Manifest.Delta delta : required.required_deltas) {
+    for (final PatcherManifest.Delta delta : required.required_deltas) {
       patches.add(downloadPublishingEvents(
         new File(directory, downloads + ".patch"),
         streams,
@@ -186,7 +186,7 @@ public final class Patcher
       events.onEvent(PatcherEventDeltaProgress.create(index, count));
 
       final File patch = patches.get(index);
-      final Manifest.Delta delta = required.required_deltas.get(index);
+      final PatcherManifest.Delta delta = required.required_deltas.get(index);
       final File out = new File(directory, index + ".data");
 
       try {
@@ -207,7 +207,7 @@ public final class Patcher
   }
 
   private static void applyPatch(
-    final Manifest.Delta delta,
+    final PatcherManifest.Delta delta,
     final File source,
     final File patch,
     final File output)
@@ -305,7 +305,7 @@ public final class Patcher
 
   private static RequiredOperations calculateRequirements(
     final Optional<String> hash_opt,
-    final Manifest manifest)
+    final PatcherManifest manifest)
   {
     LOG.debug("calculating requirements");
 
@@ -324,7 +324,7 @@ public final class Patcher
      */
 
     final String hash = hash_opt.get();
-    final ImmutableList<Manifest.Delta> deltas = manifest.deltas();
+    final ImmutableList<PatcherManifest.Delta> deltas = manifest.deltas();
     if (hash.equals(manifest.initialHash())) {
       return new RequiredOperations(false, manifest.deltas());
     }
@@ -336,9 +336,9 @@ public final class Patcher
      */
 
     for (int index = 0; index < deltas.size(); ++index) {
-      final Manifest.Delta delta = deltas.get(index);
+      final PatcherManifest.Delta delta = deltas.get(index);
       if (hash.equals(delta.resultHash())) {
-        final ImmutableList<Manifest.Delta> subset =
+        final ImmutableList<PatcherManifest.Delta> subset =
           deltas.subList(index + 1, deltas.size());
         return new RequiredOperations(false, subset);
       }
@@ -384,11 +384,11 @@ public final class Patcher
   private static final class RequiredOperations
   {
     private final boolean require_initial;
-    private final ImmutableList<Manifest.Delta> required_deltas;
+    private final ImmutableList<PatcherManifest.Delta> required_deltas;
 
     RequiredOperations(
       final boolean require_initial,
-      final ImmutableList<Manifest.Delta> required_deltas)
+      final ImmutableList<PatcherManifest.Delta> required_deltas)
     {
       this.require_initial = require_initial;
       this.required_deltas = required_deltas;
