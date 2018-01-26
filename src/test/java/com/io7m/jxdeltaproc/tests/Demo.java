@@ -25,6 +25,8 @@ public final class Demo
     final File file =
       new File("/tmp/jxdelta-poc/file.zip");
 
+    directory.mkdirs();
+
     LOG.debug("performing initial update (waiting two seconds)...");
     Thread.sleep(2000L);
 
